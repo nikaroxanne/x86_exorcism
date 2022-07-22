@@ -19,9 +19,11 @@ find:
     je binary_search_empty
     cmp rdi, 0
     je binary_search_empty
-    push rdi
-    push rsi
+    ;; args will get pushed in reverse order
+    ;; so push in reverse order of (array, sizeof(array), key) = (rdi, rsi, rdx)
     push rdx
+    push rsi
+    push rdi
     call binary_search_non_empty 
     pop rdx
     pop rsi
@@ -41,12 +43,20 @@ binary_search_non_empty:
   ;;xor r9, r9
   ;; low
   xor rbx, rbx
+  mov qword[rsp-32], rbx
+ 
+  ;;so [rsp-8*i] where i is some integer, are addresses of local variables within the function
+  ;; so we can use [rsp -8] and [rsp - 16] etc etc, to store the values of our variables low, high and mid, rather than try to use the intermediaries of the registers, only some which are callee-save registers and won't preserve their values between diff calls i.e. within the loop body etc. (yeah that's a long-winded explanation of what a local variable is; I don't care. I find tangential explanations in code comments useful. Also it's my code, my rules. Why are you even in this comment in the first place? This is for my own notes. ugh!!)
   
   ;;set rcx to value of ARRAY_SIZE, which is on the stack at rsp+16
   mov rcx, [rsp+16]
+  mov qword[rsp-8], rcx
   ;; subtract 1 from rcx, so that rcx is at the index of last element in array
+  dec qword[rsp-8]
   dec rcx
+  jmp bin_search_loop 
   
+bin_search_loop:
   ;;mid = (low + high) // 2
   ;;eax:edx / ecx
   ;; div ecx (result goes in ecx) 
@@ -56,19 +66,23 @@ binary_search_non_empty:
   ;;mov rcx, 2
   ;;div rcx
   mov r12, [rsp+16]
-  dec r12
-  shr r12, 1
+  mov qword[rsp-16], r12
+  dec qword[rsp-16]
+  sar r12, 1
+  ;;dec r12
+  sar qword[rsp-16], 1
 
   ;;xor r14, r14
   ;;lea r14, [r12]
   ;;imul r14, 8
   ;;imul r12, 8
-  jmp bin_search_loop 
+  ;;jmp bin_search_loop 
 
-bin_search_loop:
+;;bin_search_loop:
   ;;if (low > high), then array is invalid, break out of this function, return -1
-  cmp rdx, rbx
-  jl binary_search_empty
+  ;;cmp rbx, rdx
+  cmp rbx, qword[rsp-8]
+  jg binary_search_empty
   
   xor r13, r13
   ;; r13 = arr[mid]
@@ -76,24 +90,30 @@ bin_search_loop:
   ;; and mid is our index 
   ;; so *(array + mid)
   mov r13, [rsp+24+r12]
+  ;;mov qword[rsp+32], r13
   ;;mov r13, [rsp+24]
   cmp r13, [rsp+8]
   ;;push rcx
   ;;push rbx
   ;;push r12
-  ;;jg left_recurse
+  jle mid_key
+  jg left_recurse
   ;;jl right_recurse
   ;;add logic here for incrementing/decrementing high/low within loop
   ;;jne binary_search_non_empty
-  
+  ;;mov rax, qword[rsp+32]
+mid_key:
   mov rax, r12
   ret
 
 left_recurse:
-  shl r12, 2
-  ;;pop r12
-  ;;pop rbx
-  ;;pop rcx
+  mov qword[rsp-8], r12
+  dec qword[rsp-8]
   jmp bin_search_loop
   ;;ret 
     
+right_recurse:
+  ;;shl r12, 1
+  mov qword[rsp-32], r12
+  inc qword[rsp-32]
+  jmp bin_search_loop
