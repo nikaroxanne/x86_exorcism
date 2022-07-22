@@ -43,36 +43,41 @@ binary_search_non_empty:
   xor rbx, rbx
   
   ;;set rcx to value of ARRAY_SIZE, which is on the stack at rsp+16
-  ;;;;mov rcx, [rsp+16]
+  mov rcx, [rsp+16]
   ;; subtract 1 from rcx, so that rcx is at the index of last element in array
-  ;;;;dec rdx
+  dec rcx
   
   ;;mid = (low + high) // 2
   ;;eax:edx / ecx
   ;; div ecx (result goes in ecx) 
   ;;
-  mov rax, 0
-  mov rdx, [rsp+16]
-  mov rcx, 2
-  div rcx
-  mov r12, rcx
+  ;;mov rax, 0
+  ;;mov rdx, [rsp+16]
+  ;;mov rcx, 2
+  ;;div rcx
+  mov r12, [rsp+16]
+  dec r12
+  shl r12, 2
 
-  xor r14, r14
-  lea r14, [r12]
-  imul r14, 8
-  
+  ;;xor r14, r14
+  ;;lea r14, [r12]
+  ;;imul r14, 8
+  imul r12, 8
+
   ;;if (low > high), then array is invalid, break out of this function, return -1
   cmp rdx, rbx
   jl binary_search_empty
   
   xor r13, r13
-  ;;mov r13, [rsp+24+r14]
-  mov r13, [rsp+24]
+  mov r13, [rsp+24+r12]
+  ;;mov r13, [rsp+24]
   cmp r13, [rsp+8]
   
   ;;add logic here for incrementing/decrementing high/low within loop
   ;;jne binary_search_non_empty
-  mov rax, r13
+  mov rax, r12
   ret
-  
+
+bin_search_loop:
+  ret 
     
