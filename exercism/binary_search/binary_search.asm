@@ -10,17 +10,19 @@ find:
 ;; rdx = key that we are searching for in the array
 
 
-    mov rcx, rdi
-    mov rdi, rsi
-    mov r12, rdx 
+    ;;mov rcx, rdi
+    ;;mov rdi, rsi
+    ;;mov r12, rdx 
     ;; check to see if the pointer to the array is NULL, meaning that the array is empty
     ;; in NASM, NULL is defined as zero
-    cmp rdx, 0
-    je binary_search_empty
     cmp rdi, 0
+    je binary_search_empty
+    cmp rsi, 0
     je binary_search_empty
     ;; args will get pushed in reverse order
     ;; so push in reverse order of (array, sizeof(array), key) = (rdi, rsi, rdx)
+    sub rsp, 32
+    push rbp
     push rdx
     push rsi
     push rdi
@@ -28,6 +30,8 @@ find:
     pop rdx
     pop rsi
     pop rdi
+    pop rbp
+    add rsp, 32
     ret
 
 binary_search_empty:
@@ -43,7 +47,8 @@ binary_search_non_empty:
   ;;xor r9, r9
   ;; low
   xor rbx, rbx
-  mov qword[rsp-32], rbx
+  mov qword[rsp-24], rbx
+  mov rbx, qword[rsp-24]
  
   ;;so [rsp-8*i] where i is some integer, are addresses of local variables within the function
   ;; so we can use [rsp -8] and [rsp - 16] etc etc, to store the values of our variables low, high and mid, rather than try to use the intermediaries of the registers, only some which are callee-save registers and won't preserve their values between diff calls i.e. within the loop body etc. (yeah that's a long-winded explanation of what a local variable is; I don't care. I find tangential explanations in code comments useful. Also it's my code, my rules. Why are you even in this comment in the first place? This is for my own notes. ugh!!)
@@ -53,10 +58,17 @@ binary_search_non_empty:
   mov qword[rsp-8], rcx
   ;; subtract 1 from rcx, so that rcx is at the index of last element in array
   dec qword[rsp-8]
-  dec rcx
+  ;;dec rcx
+  
+;;if (low > high), then array is invalid, break out of this function, return -1
+  ;;cmp rbx, rdx
+  cmp rbx, qword[rsp-8]
+  jg binary_search_empty
   jmp bin_search_loop 
   
 bin_search_loop:
+;;bin_search_loop:
+
   ;;mid = (low + high) // 2
   ;;eax:edx / ecx
   ;; div ecx (result goes in ecx) 
@@ -65,12 +77,14 @@ bin_search_loop:
   ;;mov rdx, [rsp+16]
   ;;mov rcx, 2
   ;;div rcx
-  mov r12, [rsp+16]
+  ;;mov r12, [rsp+16]
+  mov r12, [rsp-8]
+  add r12, [rsp-24]
   mov qword[rsp-16], r12
   dec qword[rsp-16]
   sar r12, 1
   ;;dec r12
-  sar qword[rsp-16], 1
+  sar qword[rsp-16], 2
 
   ;;xor r14, r14
   ;;lea r14, [r12]
@@ -78,11 +92,6 @@ bin_search_loop:
   ;;imul r12, 8
   ;;jmp bin_search_loop 
 
-;;bin_search_loop:
-  ;;if (low > high), then array is invalid, break out of this function, return -1
-  ;;cmp rbx, rdx
-  cmp rbx, qword[rsp-8]
-  jg binary_search_empty
   
   xor r13, r13
   ;; r13 = arr[mid]
@@ -114,6 +123,6 @@ left_recurse:
     
 right_recurse:
   ;;shl r12, 1
-  mov qword[rsp-32], r12
-  inc qword[rsp-32]
+  mov qword[rsp-24], r12
+  inc qword[rsp-24]
   jmp bin_search_loop
