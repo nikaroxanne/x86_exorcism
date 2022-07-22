@@ -57,27 +57,43 @@ binary_search_non_empty:
   ;;div rcx
   mov r12, [rsp+16]
   dec r12
-  shl r12, 2
+  shr r12, 1
 
   ;;xor r14, r14
   ;;lea r14, [r12]
   ;;imul r14, 8
-  imul r12, 8
+  ;;imul r12, 8
+  jmp bin_search_loop 
 
+bin_search_loop:
   ;;if (low > high), then array is invalid, break out of this function, return -1
   cmp rdx, rbx
   jl binary_search_empty
   
   xor r13, r13
+  ;; r13 = arr[mid]
+  ;; since [rsp+24] is *array
+  ;; and mid is our index 
+  ;; so *(array + mid)
   mov r13, [rsp+24+r12]
   ;;mov r13, [rsp+24]
   cmp r13, [rsp+8]
-  
+  ;;push rcx
+  ;;push rbx
+  ;;push r12
+  ;;jg left_recurse
+  ;;jl right_recurse
   ;;add logic here for incrementing/decrementing high/low within loop
   ;;jne binary_search_non_empty
+  
   mov rax, r12
   ret
 
-bin_search_loop:
-  ret 
+left_recurse:
+  shl r12, 2
+  ;;pop r12
+  ;;pop rbx
+  ;;pop rcx
+  jmp bin_search_loop
+  ;;ret 
     
